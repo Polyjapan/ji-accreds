@@ -98,7 +98,8 @@ Then, the comitee who prints the badge will mark it as printed, avoiding double 
 
 ## Guests / VIPs
 
-1. **Pro manager** creates a badge with the required info (name). The badge is not bound to any request.
+1. **Pro manager** creates a request to group different badges for a same activity or prestation
+2. **Pro manager** creates accreds within the request
 
 ## Medias
 
@@ -106,111 +107,198 @@ Then, the comitee who prints the badge will mark it as printed, avoiding double 
 2. **Media person** goes to the accred dashboard
 3. **Media person** opens the form on accred and sends a request, providing some info (name of the media, website...) and the number of requested authorizations
 4. **Comm** accepts
-5. **Booth manager** goes to the accred creation page, where he provides the license plate for each of the authorizations
-6. **Booth manager** can edit an authorization until he validates it
-7. **Booth manager** validates the authorization and can print it immediately
+5. **Media person** goes to the accred creation page, where he provides the identities for each requested accred. 
+6. **Media person** can edit the identities until they are delivered
 
-## How it works? (first draft, wip)
+# Some interesting properties
 
+- Admins can impersonate users and create requests on their behalf. 
+	- They need to provide an email address when doing that
+	- When the request is accepted, an email is sent to the provided address to allow the user to claim the request
+	- This email can also be sent at any time by the admin.
+- Admins can edit request and accreditations, with the exception of accepted/refused requests and of delivered accreditations (i.e. delivered badge, wristband, ...)
+- Admins can create as many accreditations as they want within a request when accepting it
+	- The number of accreditations delivered by admins is not always the same as the number requested by the user 
+	- The admin chooses the type of accreditation on a one-by-one basis, and not depending on the request
 
-### Accreditation Request
-
-The user requests the accreditations himself. He fills a form, filing an `ACCRED REQUEST`. 
-
-Once accepted, one (or several) accreditations are created. The user then have to fill the accreditations.
-
-
-#### States
-
-A request evolves between different states:
-
-```
-    DRAFT <-------------------\
-      ^                       |
-      |     /---------> CHANGES REQUESTED 
-      V    / 
-      	  /
-    SENT -------------> REFUSED
-      |
-      |
-      V
-
-  ACCEPTED    
-```
-
-The request stays in state `DRAFT` until the user asks for validation. It is then moved to `SENT` state. The user can still change the request, in which case it will go back to `DRAFT` state.
-
-An admin will then validate the request. He can either accept, refuse, or request modifications. `ACCEPTED` and `REFUSED` states are final. A request in this state can no longer be updated. `CHANGES REQUESTED` requests can be edited. They will be moved to draft as soon as they are updated.
-
-All state changes are logged: `timestamp, from_state, to_state, changed_by, reason`. The reason can be automatically filled, but needs to be provided by the admin for the `REFUSED` and `CHANGES REQUESTED` states.
-
-#### Example requests
-
-##### Media accreditation
-
-This accredidation is requested directly from the accred website.
-
-- Identity (firstname, lastname, birthdate, email) of requestor
-- Name of the media
-- Website of the media
-- List of requested accreditations. For each:
-	- Identity of the person (firstname, lastname, birthdate, email)
+Also, it is interesting to note that in all these workflows the user (or an admin impersonating him) will have to provide identification info (license plate, name, picture, ...). By separating request and accreds, we allow the user to make the request early, without knowing precisely who will help him, while taking more time to actually fill in the accreds.
 
 
-##### Parking authorization
 
-This request is first created by an other service (or an admin).
+# How it works?
 
-Data provided by the external service:
- - Name of the booth
- - Identity of requestor
+The workflow is always separated in two parts.
 
-Data provided by the user:
+## 1. The Accreditation Request (`request`)
 
-- Reason why you need a parking authorization
-- List of requested authorizations. For each:
-	- License plate number, vehicle type, parking duration requested
+### Properties
 
-When accepted, the parking authorizations are immediately generated and sent.
+- `user`: the userId (against CAS) of the person who manages the request. Can be null, if the request is not yet linked to a user. 
+- `claim_code`: a random code, allowing to claim the current request while logged in. Usually null.
+- `type`: a link to a description of the fields needed for the accreditation
 
-### Accreditation
+The fields have following type: 
+- `text` and `longText`
+	- optional: `minLength`
+	- optional: `maxLength`
+	- optional: `regex`
+- `email`
+- `date`
+- `checkbox`
+- `select`
+- `file`
+- `image`
+- `url`
 
-Once an accreditation request is accepted, an accreditation is generated. It can be of three types: 
- - `badge`, for a physical badge that needs to be printed
- - `authorization`, for a physical authorization that needs to be printed by the user
- - `accreditation`, for any other kind of accreditation (wristband, ...)
+They also carry:
+- `name`: the name of the field in the form
+- `label`: the label of the field
+- optional `helpText`: some help to fill the line
+- `required`: if true, this field is mandatory
 
-The accreditation can also be directly generated by an admin or external app.
-
-The accreditation also holds a boolean flag, `requires_validation`. If this flag is set to `true`, the accreditation needs to be validated by the admins before being accepted. If this flag is set to `false`, the accreditation is directly accepted when sent by the user. This make little sense for a badge, but makes more sense for an authorization (the user can directly print it, for example).
-
-An accreditation contains multiple fields. Each field has a type, a position, and a value source. 
-
-Types:
- - image
- - short text
-
-Value source:
- - `fixed`: the value is a constant
- - `admin`: the value is provided when the accreditation is created, by the admin or external app creating it
- - `user`: the value is provided by the user
-
-The accreditation has a state too.
-
+### Database Structure
 
 ```
-    DRAFT <-------------------\
-      ^                       |
-      |     /---------> CHANGES REQUESTED 
-      V    / 
-      	  /
-    SENT -------------> REFUSED
-      |
-      |
-      V
+editions:
+	id: int
+	endDate: timestamp # automatic archival date
+	name: string # ex "Japan Impact 11"
 
-  ACCEPTED    -----> PRINTED
+request_types:
+	id: int
+	edition: int -> editions#id
+	name: string # ex "Media Accreditation Request"
+	required_group: optional string # provides a group that the user must have to be able to start this request type from the front office
+	hidden: boolean # if true, the request type cannot be started from the front office
+
+request_type_fields:
+	id: int
+	request_type: int -> request_types#id
+	name: string
+	label: string
+	help_text: optional string
+	required: boolean
+	type: string, within set described before
+
+request_type_fields_aditional: 
+	field: int -> request_type_fields#id
+	key: string
+	value: string
+
+	# Examples :
+	# for a text
+	#	key=minLength value=10
+	#
+	# for a select, allows to provide the set of allowed values. Will be rendered with key as the value and value as the label
+
+request:
+	id: int
+	user_id: optional int
+	claim_code: optional string
+	request_type: int -> request_types#id
+	state: SET('draft', 'sent', 'requested_changes', 'accepted', 'refused')
+
+request_logs:
+	request_id: int -> requests#id
+	from_state: optional SET('draft', 'sent', 'requested_changes')
+	to_state: SET('draft', 'sent', 'requested_changes', 'accepted', 'refused')
+	reason: optional string
+	timestamp: timestamp
+	changed_by: int # cas user id
 ```
 
-If `requires_validation` is set to `false`, the state moves directly from `DRAFT` to `ACCEPTED`.
+### Flows
 
+#### Automatic
+
+An external app creates an automatically accepted request, linked to a given user.
+
+This allows an intranet (or the shop) to automatically grant an accred that should be granted anyway (for example, gold ticket).
+
+#### User creation
+
+1. An user creates the request, updates it, and sends it when ready.
+2. The request is then reviewed by an admin that can `ACCEPT`, `REFUSE` or `REQUEST CHANGES`.
+	- If refused, the request doesn't move forward and cannot be modified
+	- If changes requested, the user goes back to 1 and updates the request
+
+An admin can also create a request on behalf of a user. If so, it works as follows:
+
+1. Admin creates request. A `claim_code` is generated.
+2. Admin can send the request at any time by providing an email address. An email will be sent with the claim code. Once claimed, the request becomes a "standard" user request, that can be edited by the user directly.
+3. When accepting the request, an email **must** be provided if the request `claim_code` is not null. 
+
+An admin can always edit other users' requests, hence the second workflow is not so different from the first one. The main difference being that in the second case, `claim_code` is not null, and `user` is null. 
+
+## 2. The Accreditation (`accred`)
+
+### Properties
+
+Very similar to requests.
+
+- `self_service`: an accreditation that the user can validate himself (wristband, parking authorization)
+- `printable`: 
+	- if `self_service` is `true`: an accreditation that the user can print himself (parking authorization)
+	- if `self_service` is `false`: an accreditation that the comitee needs to print (badge)
+
+### Database Structure
+
+
+```
+accred_types:
+	id: int
+	edition: int -> editions#id
+	name: string # ex "Badge comité" "Bracelet exposant" "Autorisation de parking longue durée" "Badge non nominatif"...
+	is_self_service: boolean
+	is_printable: boolean
+
+accred_type_fields:
+	id: int
+	accred_type: int -> accred_types#id
+	name: string
+	label: string
+	help_text: optional string
+	required: boolean
+	type: string, within set described before
+	show_in_listings: boolean # describes if this field should be displayed on the accreditations listings that will be used by the staff
+	user_editable: boolean # if false, the value is provided by the entity creating the accred and cannot be edited by the user. if true, it is provided by the user.
+
+accred_type_fields_aditional: 
+	field: int -> accred_type_fields#id
+	key: string
+	value: string
+
+	# Examples :
+	# for a text
+	#	key=minLength value=10
+	#
+	# for a select, allows to provide the set of allowed values. Will be rendered with key as the value and value as the label
+
+accred:
+	id: int
+	request_id: int -> requests#id
+	accred_type: int -> accred_types#id
+	state: SET('draft', 'sent', 'requested_changes', 'accepted', 'printed', 'delivered')
+
+accred_logs:
+	request_id: int -> requests#id
+	from_state: SET('draft', 'sent', 'requested_changes', 'accepted', 'printed')
+	to_state: SET('draft', 'sent', 'requested_changes', 'accepted', 'printed', 'delivered')
+	reason: optional string
+	timestamp: timestamp
+	changed_by: int # cas user id
+```
+
+### Flow
+
+1. The entity accepting the request (admin or app) creates an accreditation. It can be done at any time for an accepted request. Usually, all accreditations are generated immediately after the request is accepted. Sometimes, however, an admin or an app can add more accreditations after. Sometimes, some values need to be provided when creating the accreditation (for example, a badge clearance level)
+2. The user can see all accreds linked to a request from the request page. He cannot create them but can edit them, to provide the requested information. Some fields might not be editable (see db schema).
+3. Then, if the accreditation is a `self_service` accred (like an authorization to print, or a wristband to take):
+	1. The user can accept the accred himself
+	2. The user can un-accept and edit the accred as long as it has not been `DELIVERED`
+	3. If the accred is a `printable` accred (like an authorization to print), the user can deliver it himself. The printable media will be generated and the accred marked as `DELIVERED`.
+4. If the accreditation is not a `self_service` accred (like a badge):
+	1. The user sends his accred
+	2. An admin `ACCEPTS` or `REQUESTS CHANGES`.
+	3. If accepted, the user can no longer change his accred. In the other case, he has to do the requested changes and send again.
+5. When the accreditation is delivered (self print, wristband given, badge given), the accred is tagged as `DELIVERED` and "archived". Nothing and nobody can change it anymore.
