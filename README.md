@@ -3,7 +3,7 @@ A system to manage accreditations at Japan Impact
 
 # Use-cases workflows
 
-## Gold Tickets badges
+## Gold Tickets badges
 
 1. **User** buys ticket on the shop
 2. **Shop** creates an already accepted request for the user (bound to its uid) on accred and redirects the user there. (He has to login again)
@@ -16,7 +16,7 @@ We can:
 
 During the event, the staff goes on accred, finds the accred, delivers the badge and tag it as delivered.
 
-## Booth guests
+## Booth guests
 
 ### Current workflow (no Pro intranet)
 
@@ -40,7 +40,7 @@ During the event, the staff goes on accred, finds the accred, delivers the wrist
 
 The other form can still be kept to allow booth managers to request more accreditations.
 
-## Booth parking authorization
+## Booth parking authorization
 
 ### Current workflow (no Pro intranet)
 
@@ -67,14 +67,14 @@ The other form can still be kept to allow booth managers to request more authori
 
 ## Comitee badges (and all accrediting badges)
 
-### For the official comitees and team members
+### For the official comitees and team members
 
 1. **Security manager** uses a bulk import to generate the requests, providing for each badge all the requested info (name, pole, security clearance, email)
 2. Badge requests are generated and accepted, not bound to any account, and sent by email
 3. **Comitee member** clicks on the link, and logs in. The request becomes bound to the account.
 4. **Comitee member** fills in the accred creation form (provides his picture)
 
-### For individuals comitee members (some special staffs)
+### For individuals comitee members (some special staffs)
 
 Same thing, without the bulk.
 
@@ -88,7 +88,7 @@ If we want to generate the badge with no interaction from the user (for example,
 
 Then, the comitee who prints the badge will mark it as printed, avoiding double prints.
 
-## Staff badges
+## Staff badges
 
 1. **Staff intranet** sends an accepted request for each staff, with the picture left to complete
 2. **Staff** logs in to the dashboard, opens the accepted request, goes to the accred creation page, provides picture, and sends
@@ -101,7 +101,7 @@ Then, the comitee who prints the badge will mark it as printed, avoiding double 
 1. **Pro manager** creates a request to group different badges for a same activity or prestation
 2. **Pro manager** creates accreds within the request
 
-## Medias
+## Medias
 
 1. **Comm** sends the link to accred to the media person
 2. **Media person** goes to the accred dashboard
@@ -131,7 +131,7 @@ The workflow is always separated in two parts.
 
 ## 1. The Accreditation Request (`request`)
 
-### Properties
+### Properties
 
 - `user`: the userId (against CAS) of the person who manages the request. Can be null, if the request is not yet linked to a user. 
 - `claim_code`: a random code, allowing to claim the current request while logged in. Usually null.
@@ -156,7 +156,7 @@ They also carry:
 - optional `helpText`: some help to fill the line
 - `required`: if true, this field is mandatory
 
-### Database Structure
+### Database Structure
 
 ```
 editions:
@@ -168,7 +168,7 @@ request_types:
 	id: int
 	edition: int -> editions#id
 	name: string # ex "Media Accreditation Request"
-	required_group: optional string # provides a group that the user must have to be able to start this request type from the front office
+	required_group: optional string # provides a group that the user must have to be able to start this request type from the front office
 	hidden: boolean # if true, the request type cannot be started from the front office
 
 request_type_fields:
@@ -185,7 +185,7 @@ request_type_fields_aditional:
 	key: string
 	value: string
 
-	# Examples :
+	# Examples :
 	# for a text
 	#	key=minLength value=10
 	#
@@ -204,10 +204,10 @@ request_logs:
 	to_state: SET('draft', 'sent', 'requested_changes', 'accepted', 'refused')
 	reason: optional string
 	timestamp: timestamp
-	changed_by: int # cas user id
+	changed_by: int # cas user id
 ```
 
-### Flows
+### Flows
 
 #### Automatic
 
@@ -215,7 +215,7 @@ An external app creates an automatically accepted request, linked to a given use
 
 This allows an intranet (or the shop) to automatically grant an accred that should be granted anyway (for example, gold ticket).
 
-#### User creation
+#### User creation
 
 1. An user creates the request, updates it, and sends it when ready.
 2. The request is then reviewed by an admin that can `ACCEPT`, `REFUSE` or `REQUEST CHANGES`.
@@ -232,7 +232,7 @@ An admin can always edit other users' requests, hence the second workflow is not
 
 ## 2. The Accreditation (`accred`)
 
-### Properties
+### Properties
 
 Very similar to requests.
 
@@ -260,7 +260,7 @@ accred_type_fields:
 	help_text: optional string
 	required: boolean
 	type: string, within set described before
-	show_in_listings: boolean # describes if this field should be displayed on the accreditations listings that will be used by the staff
+	show_in_listings: boolean # describes if this field should be displayed on the accreditations listings that will be used by the staff
 	user_editable: boolean # if false, the value is provided by the entity creating the accred and cannot be edited by the user. if true, it is provided by the user.
 
 accred_type_fields_aditional: 
@@ -268,7 +268,7 @@ accred_type_fields_aditional:
 	key: string
 	value: string
 
-	# Examples :
+	# Examples :
 	# for a text
 	#	key=minLength value=10
 	#
@@ -286,10 +286,10 @@ accred_logs:
 	to_state: SET('draft', 'sent', 'requested_changes', 'accepted', 'printed', 'delivered')
 	reason: optional string
 	timestamp: timestamp
-	changed_by: int # cas user id
+	changed_by: int # cas user id
 ```
 
-### Flow
+### Flow
 
 1. The entity accepting the request (admin or app) creates an accreditation. It can be done at any time for an accepted request. Usually, all accreditations are generated immediately after the request is accepted. Sometimes, however, an admin or an app can add more accreditations after. Sometimes, some values need to be provided when creating the accreditation (for example, a badge clearance level)
 2. The user can see all accreds linked to a request from the request page. He cannot create them but can edit them, to provide the requested information. Some fields might not be editable (see db schema).
