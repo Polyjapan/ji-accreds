@@ -205,6 +205,11 @@ request_logs:
 	reason: optional string
 	timestamp: timestamp
 	changed_by: int # cas user id
+
+request_content:
+	request_id: int
+	field_id: int
+	value: string
 ```
 
 ### Flows
@@ -287,7 +292,14 @@ accred_logs:
 	reason: optional string
 	timestamp: timestamp
 	changed_by: int # cas user id
+
+accred_content:
+	accred_id: int
+	field_id: int
+	value: string
 ```
+
+TODO: a few more tables for images generation :)
 
 ### Flow
 
