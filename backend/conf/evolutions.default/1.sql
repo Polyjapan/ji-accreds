@@ -37,11 +37,13 @@ create table `request_types`
 (
     `id`             INTEGER      NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `edition`        INTEGER      NOT NULL,
+    `internal_name`  VARCHAR(100) NOT NULL,
     `name`           VARCHAR(100) NOT NULL,
     `required_group` VARCHAR(100) NULL,
     `hidden`         BOOLEAN,
 
-    FOREIGN KEY (`edition`) REFERENCES `editions` (`id`)
+    FOREIGN KEY (`edition`) REFERENCES `editions` (`id`),
+    UNIQUE KEY (`edition`, `internal_name`)
 );
 
 
@@ -100,11 +102,13 @@ create table `accred_types`
 (
     `id`              INTEGER      NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `edition`         INTEGER      NOT NULL,
+    `internal_name`   VARCHAR(100) NOT NULL,
     `name`            VARCHAR(100) NOT NULL,
     `is_self_service` BOOLEAN,
     `is_printable`    BOOLEAN,
 
-    FOREIGN KEY (`edition`) REFERENCES `editions` (`id`)
+    FOREIGN KEY (`edition`) REFERENCES `editions` (`id`),
+    UNIQUE KEY (`edition`, `internal_name`)
 );
 
 create table `accred_type_fields`
@@ -132,7 +136,7 @@ create table `accreds`
 
 create table `accred_logs`
 (
-    `accred_id` INTEGER                                                                        NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `accred_id`  INTEGER                                                                        NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `from_state` SET ('draft', 'sent', 'requested_changes', 'accepted', 'printed')              NOT NULL,
     `to_state`   SET ('draft', 'sent', 'requested_changes', 'accepted', 'printed', 'delivered') NOT NULL,
     `reason`     VARCHAR(250)                                                                   NULL,
@@ -146,8 +150,8 @@ create table `accred_logs`
 create table `accred_contents`
 (
     `accred_id` INTEGER NOT NULL,
-    `field_id`   INTEGER NOT NULL,
-    `value`      TEXT    NOT NULL,
+    `field_id`  INTEGER NOT NULL,
+    `value`     TEXT    NOT NULL,
 
     PRIMARY KEY (`accred_id`, `field_id`),
     FOREIGN KEY (`accred_id`) REFERENCES `accred_types` (`id`),
