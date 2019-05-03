@@ -59,6 +59,7 @@ package object models {
     def editionId = column[Int]("edition")
     def internalName = column[String]("internal_name")
     def name = column[String]("name")
+    def shortDescription = column[String]("short_description")
     def description = column[String]("description")
     def requiredGroup = column[Option[String]]("required_group")
     def hidden = column[Boolean]("hidden")
@@ -66,7 +67,7 @@ package object models {
     def edition = foreignKey("", editionId, editions)(_.id)
 
     def * =
-      (id.?, editionId, internalName, name, description, requiredGroup, hidden).shaped <> (RequestType.tupled, RequestType.unapply)
+      (id.?, editionId, internalName, name, shortDescription, description, requiredGroup, hidden).shaped <> (RequestType.tupled, RequestType.unapply)
 
     def fields = requestTypeFields.filter(_.requestTypeId == id).flatMap(_.field)
   }

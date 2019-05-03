@@ -35,13 +35,14 @@ create table `fields_additional`
 
 create table `request_types`
 (
-    `id`             INTEGER      NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    `edition`        INTEGER      NOT NULL,
-    `internal_name`  VARCHAR(100) NOT NULL,
-    `name`           VARCHAR(100) NOT NULL,
-    `description`    TEXT         NOT NULL,
-    `required_group` VARCHAR(100) NULL,
-    `hidden`         BOOLEAN,
+    `id`               INTEGER      NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `edition`          INTEGER      NOT NULL,
+    `internal_name`    VARCHAR(100) NOT NULL,
+    `name`             VARCHAR(100) NOT NULL,
+    `shortDescription` TEXT         NOT NULL,
+    `description`      TEXT         NOT NULL,
+    `required_group`   VARCHAR(100) NULL,
+    `hidden`           BOOLEAN,
 
     FOREIGN KEY (`edition`) REFERENCES `editions` (`id`),
     UNIQUE KEY (`edition`, `internal_name`)

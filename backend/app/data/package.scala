@@ -9,7 +9,8 @@ package object data {
 
   case class Field(id: Option[Int], name: String, label: String, helpText: Option[String], required: Boolean, fieldType: String)
 
-  case class RequestType(id: Option[Int], edition: Int, internalName: String, name: String, description: String, requiredGroup: Option[String], hidden: Boolean)
+  case class RequestType(id: Option[Int], edition: Int, internalName: String, name: String,
+                         shortDescription: String, description: String, requiredGroup: Option[String], hidden: Boolean)
 
   case class Request(id: Option[Int], userId: Option[Int], claimCode: Option[String], requestType: Int, state: String)
 
