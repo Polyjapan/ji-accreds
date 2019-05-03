@@ -25,7 +25,6 @@ package object models {
 
   private[models] val editions = TableQuery[Editions]
 
-
   private[models] class Fields(tag: Tag) extends Table[Field](tag, "fields") with Identified {
     def id = column[Int]("id")
     def name = column[String]("name")
@@ -60,13 +59,14 @@ package object models {
     def editionId = column[Int]("edition")
     def internalName = column[String]("internal_name")
     def name = column[String]("name")
+    def description = column[String]("description")
     def requiredGroup = column[Option[String]]("required_group")
     def hidden = column[Boolean]("hidden")
 
     def edition = foreignKey("", editionId, editions)(_.id)
 
     def * =
-      (id.?, editionId, internalName, name, requiredGroup, hidden).shaped <> (RequestType.tupled, RequestType.unapply)
+      (id.?, editionId, internalName, name, description, requiredGroup, hidden).shaped <> (RequestType.tupled, RequestType.unapply)
 
     def fields = requestTypeFields.filter(_.requestTypeId == id).flatMap(_.field)
   }

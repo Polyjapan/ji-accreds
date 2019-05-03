@@ -39,6 +39,7 @@ create table `request_types`
     `edition`        INTEGER      NOT NULL,
     `internal_name`  VARCHAR(100) NOT NULL,
     `name`           VARCHAR(100) NOT NULL,
+    `description`    TEXT         NOT NULL,
     `required_group` VARCHAR(100) NULL,
     `hidden`         BOOLEAN,
 
